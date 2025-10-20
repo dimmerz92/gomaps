@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-// OrderedMap is a generic map that preserves the insertion order of key-value pairs.
+// OrderedMap is a threadsafe generic map that preserves the insertion order of key-value pairs.
 // It allows O(1) access by key and maintains a consistent order for iteration.
 // Deletions is an O(n) operation due to the need to shift elements in the underlying structure.
 type OrderedMap[K comparable, V any] struct {
