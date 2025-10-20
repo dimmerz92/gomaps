@@ -7,14 +7,7 @@ import (
 )
 
 func TestOrderedMap(t *testing.T) {
-	var om *gomaps.OrderedMap[string, int]
-
-	t.Run("test new ordered map", func(t *testing.T) {
-		om = gomaps.NewOrderedMap[string, int]()
-		if om == nil {
-			t.Fatal("NewOrderedMap returned nil")
-		}
-	})
+	om := gomaps.NewOrderedMap[string, int]()
 
 	t.Run("test push", func(t *testing.T) {
 		err := om.Push("a", 1)
@@ -279,6 +272,60 @@ func TestOrderedMap_Reverse(t *testing.T) {
 		value, ok := om.Get("only")
 		if !ok || value != 42 {
 			t.Fatalf("expected success, got ok=%t value=%d", ok, value)
+		}
+	})
+}
+
+func TestOrderedMap_Concat(t *testing.T) {
+	t.Run("test empty", func(t *testing.T) {
+		om1 := gomaps.NewOrderedMap[string, int]()
+		om2 := gomaps.NewOrderedMap[string, int]()
+		out := om1.Concat(om2)
+
+		i := 0
+		out.Range(func(key string, value int) bool {
+			i++
+			return true
+		})
+
+		if i > 0 {
+			t.Fatalf("Expected empty, got %d values", i)
+		}
+	})
+
+	t.Run("test with values", func(t *testing.T) {
+		om1 := gomaps.NewOrderedMap[string, int]()
+		om1.Push("a", 1)
+		om1.Push("b", 2)
+		om1.Push("c", 3)
+
+		om2 := gomaps.NewOrderedMap[string, int]()
+		om2.Push("d", 4)
+		om2.Push("e", 5)
+		om2.Push("f", 6)
+
+		expectedKeys := []string{"a", "b", "c", "d", "e", "f"}
+		expectedValues := []int{1, 2, 3, 4, 5, 6}
+
+		out := om1.Concat(om2)
+
+		i := 0
+		out.Range(func(key string, value int) bool {
+			if key != expectedKeys[i] {
+				t.Fatalf("Expected key %s at position %d, got %s", expectedKeys[i], i, key)
+			}
+
+			if value != expectedValues[i] {
+				t.Errorf("Expected value %d at position %d, got %d", expectedValues[i], i, value)
+			}
+
+			i++
+
+			return true
+		})
+
+		if i != len(expectedKeys) {
+			t.Errorf("Expected %d iterations, got %d", len(expectedKeys), i)
 		}
 	})
 }

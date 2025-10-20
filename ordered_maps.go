@@ -16,8 +16,8 @@ type OrderedMap[K comparable, V any] struct {
 }
 
 // NewOrderedMap returns an empty initialised ordered map.
-func NewOrderedMap[K comparable, V any]() *OrderedMap[K, V] {
-	return &OrderedMap[K, V]{
+func NewOrderedMap[K comparable, V any]() OrderedMap[K, V] {
+	return OrderedMap[K, V]{
 		keys:    make(map[K]int),
 		indexes: make(map[int]K),
 		values:  []V{},
@@ -162,4 +162,17 @@ func (om *OrderedMap[K, V]) Reverse() {
 	}
 
 	om.values = reversed
+}
+
+func (om *OrderedMap[K, V]) Concat(oms ...OrderedMap[K, V]) *OrderedMap[K, V] {
+	result := *om
+
+	for _, m := range oms {
+		m.Range(func(key K, value V) bool {
+			result.Set(key, value)
+			return true
+		})
+	}
+
+	return &result
 }
