@@ -101,3 +101,65 @@ func (om *OrderedMap[K, V]) Delete(key K) {
 		delete(om.indexes, i+1)
 	}
 }
+
+// Range calls the function `fn` for each key-value pair in the OrderedMap.
+// If `fn` returns false, iteration will immediately stop.
+// This is a readonly method and will deadlock on attempts to modify the underlying data.
+// To modify the underlying data, use the `RangeUnsafe` method.
+func (om *OrderedMap[K, V]) Range(fn func(key K, value V) bool) {
+	om.mu.RLock()
+	defer om.mu.RUnlock()
+
+	for i, value := range om.values {
+		if !fn(om.indexes[i], value) {
+			return
+		}
+	}
+}
+
+// RangeUnsafe calls the function `fn` for each key-value pair in the OrderedMap.
+// If `fn` returns false, iteration will immediately stop.
+// Allows for the updating of values during iteration.
+func (om *OrderedMap[K, V]) RangeUnsafe(fn func(key K, value V) bool) {
+	om.mu.RLock()
+
+	type kv struct {
+		key   K
+		value V
+	}
+
+	snapshot := make([]kv, len(om.values))
+	for i, v := range om.values {
+		snapshot[i] = kv{key: om.indexes[i], value: v}
+	}
+
+	om.mu.RUnlock()
+
+	for _, item := range snapshot {
+		if !fn(item.key, item.value) {
+			return
+		}
+	}
+}
+
+// Reverse sorts the OrderedMap inplace in the reverse order.
+func (om *OrderedMap[K, V]) Reverse() {
+	om.mu.Lock()
+	defer om.mu.Unlock()
+
+	reversed := make([]V, len(om.values))
+	reverseIdx := len(om.values) - 1
+
+	for idx := range len(om.values) {
+		key := om.indexes[idx]
+		valueIdx := om.keys[key]
+
+		om.keys[key] = reverseIdx
+		om.indexes[reverseIdx] = key
+
+		reversed[reverseIdx] = om.values[valueIdx]
+		reverseIdx--
+	}
+
+	om.values = reversed
+}
