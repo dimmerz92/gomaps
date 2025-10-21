@@ -61,6 +61,30 @@ func (om *OrderedMap[K, V]) Push(key K, value V) error {
 	return nil
 }
 
+// Prepend adds the key value pair to the start of the map or returns an error if the key value pair already exists.
+func (om *OrderedMap[K, V]) Prepend(key K, value V) error {
+	_, exists := om.keys[key]
+	if exists {
+		return fmt.Errorf("key %v already exists", key)
+	}
+
+	keys := make(map[K]int)
+	indexes := make(map[int]K)
+	for k, idx := range om.keys {
+		keys[k] = idx + 1
+		indexes[idx+1] = k
+	}
+
+	keys[key] = 0
+	indexes[0] = key
+
+	om.keys = keys
+	om.indexes = indexes
+	om.values = append([]V{value}, om.values...)
+
+	return nil
+}
+
 // Get returns the value mapped to by the key if it exists and a success bool.
 func (om *OrderedMap[K, V]) Get(key K) (V, bool) {
 	om.mu.RLock()

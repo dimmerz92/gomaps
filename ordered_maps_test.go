@@ -74,6 +74,40 @@ func TestOrderedMap(t *testing.T) {
 	})
 }
 
+func TestOrderedMap_Prepend(t *testing.T) {
+	om := gomaps.NewOrderedMap[string, int]()
+
+	t.Run("test empty", func(t *testing.T) {
+		err := om.Prepend("a", 1)
+		if err != nil {
+			t.Fatalf("expected success, got %v", err)
+		}
+
+		out, ok := om.Get("a")
+		if !ok || out != 1 {
+			t.Fatalf("expected (1 true), got (%d %t)", out, ok)
+		}
+	})
+
+	t.Run("test non empty", func(t *testing.T) {
+		om.Prepend("b", 2)
+		om.Prepend("c", 3)
+		om.Prepend("d", 4)
+
+		expectedKeys := []string{"d", "c", "b", "a"}
+		expectedValues := []int{4, 3, 2, 1}
+
+		i := 0
+		om.Range(func(key string, value int) bool {
+			if expectedKeys[i] != key || expectedValues[i] != value {
+				t.Fatalf("expected (%s %d), got (%s %d)", expectedKeys[i], expectedValues[i], key, value)
+			}
+			i++
+			return true
+		})
+	})
+}
+
 func TestOrderedMap_Range(t *testing.T) {
 	om := gomaps.NewOrderedMap[string, int]()
 
